@@ -1,5 +1,5 @@
 all:
-	ocamlbuild main.byte
+	ocamlbuild -pkgs llvm,llvm.analysis main.byte
 
 clean:
 	ocamlbuild -clean
