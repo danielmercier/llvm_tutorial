@@ -20,7 +20,7 @@ let rec parse_expr = parser
   | [< p=parse_primary; stream >] -> parse_bin_rhs 0 p stream
   | [< >] -> raise (Stream.Error "not expecting end of stream")
 
-(* primary 
+(* primary
  *    ::= identifier
  *    ::= numberexpr
  *    ::= parenexpr *)
