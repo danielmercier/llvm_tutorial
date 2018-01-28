@@ -18,7 +18,7 @@ let is_known c = Hashtbl.mem binop_precedence c
 
 let rec parse_expr = parser
   | [< p=parse_primary; stream >] -> parse_bin_rhs 0 p stream
-  | [< >] -> raise (Stream.Error "not expecting end of stream")
+  | [< >] -> raise Stream.Failure
 
 (* primary
  *    ::= identifier
@@ -35,7 +35,7 @@ and parse_primary = parser
   | [< 'Token.Kwd '('; e=parse_expr; 'Token.Kwd ')' ?? "expected ')'" >] -> e
 
   (* expecting a primary expression *)
-  | [< >] -> raise (Stream.Error "unknown token when expecting an expression.")
+  | [< >] -> raise Stream.Failure
 
 and parse_bin_rhs prec lhs stream =
   match Stream.peek stream with
@@ -98,6 +98,9 @@ let rec print_ast = parser
       in
       aux e;
       print_endline "";
+      print_ast stream
+
+  | [< 'Token.Kwd ';'; stream >] ->
       print_ast stream
 
   | [< >] -> print_endline ""
