@@ -10,10 +10,10 @@ type expr =
   | Binary of Token.operator * expr * expr
 
   (* call to function *)
-  | Call of string * expr list
+  | Call of string * expr array
 
 (* proto - prototype of a function, the function name and arguments names *)
-type proto = Prototype of string * string list
+type proto = Prototype of string * string array
 
 (* func - the function itself *)
 type func = Function of string * expr
