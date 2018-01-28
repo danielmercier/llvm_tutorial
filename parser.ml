@@ -37,16 +37,14 @@ and parse_primary = parser
   (* expecting a primary expression *)
   | [< >] -> raise (Stream.Error "unknown token when expecting an expression.")
 
-(*************************************************************************)
-(********************** Binary expression parsing ************************)
-(*************************************************************************)
-
 and parse_bin_rhs prec lhs stream =
   match Stream.peek stream with
   | Some (Token.Kwd op) when is_known op ->
       let op_prec = precedence op in
 
-      if op_prec < prec then lhs else begin
+      if op_prec < prec || (op_prec = prec && is_left_associative op)
+      then lhs
+      else begin
         (* eat the operator *)
         Stream.junk stream;
 
@@ -61,7 +59,8 @@ and parse_bin_rhs prec lhs stream =
               (* if the precedence of this operator is less than the previous,
                * the rhs is just the primary expression, else we recurse to
                * get the rhs *)
-              if op2_prec <= op_prec
+              if (op2_prec < op_prec
+                  || (op2_prec = op_prec && is_left_associative op))
               then rhs
               else parse_bin_rhs op_prec rhs stream
           | _ -> rhs
@@ -71,10 +70,6 @@ and parse_bin_rhs prec lhs stream =
         parse_bin_rhs prec bin stream
       end
   | _ -> lhs
-(*************************************************************************)
-(******************** End binary expression parsing **********************)
-(*************************************************************************)
-
 
 (*==========================================================================*)
 (*================================TEST======================================*)
