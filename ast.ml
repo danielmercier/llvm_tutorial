@@ -7,7 +7,7 @@ type expr =
   | Variable of string
 
   (* binary operations *)
-  | Binary of char * expr * expr
+  | Binary of Token.operator * expr * expr
 
   (* call to function *)
   | Call of string * expr list

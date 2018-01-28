@@ -18,8 +18,10 @@ let rec lex = parser
   | [< ' ('#'); stream >] ->
       lex_comment stream
 
+  | [< op=lex_operator; stream >] -> [< 'op; lex stream >]
+
   (* unknown character *)
-  | [< 'c; stream >] -> [< 'Token.Kwd c; lex stream >]
+  | [< 'c; stream >] -> [< 'Token.Unknown c; lex stream >]
 
   (* end of stream*)
   | [< >] -> [< >]
@@ -41,40 +43,49 @@ and lex_number buffer = parser
   | [< stream >] ->
       [< 'Token.Number (int_of_string (Buffer.contents buffer)); lex stream >]
 
+and lex_operator = parser
+  | [< ''+' >] -> Token.Operator Token.Add
+  | [< ''-' >] -> Token.Operator Token.Minus
+  | [< ''*' >] -> Token.Operator Token.Mult
+  | [< ''/' >] -> Token.Operator Token.Div
+
+  | [< ''<'; stream >] ->
+      let aux = parser
+        | [< ''=' >] -> Token.Operator Token.Le
+        | [< >] -> Token.Operator Token.Lt
+      in
+      aux stream
+
+  | [< ''>'; stream >] ->
+      let aux = parser
+        | [< ''=' >] -> Token.Operator Token.Ge
+        | [< >] -> Token.Operator Token.Gt
+      in
+      aux stream
+
+  | [< ''=' >] -> Token.Operator Token.Eq
+  | [< ''!'; ''=' >] -> Token.Operator Token.Neq
+
+  | [< ''a'; ''n'; ''d' >] -> Token.Operator Token.And
+  | [< ''o'; ''r' >] -> Token.Operator Token.Or
+
+  (* No operator has been recognized *)
+  | [< >] -> raise Stream.Failure;
+
+
 and lex_comment = parser
    | [< ' ('\n'); stream >] -> lex stream
    | [< '_; stream >] -> lex_comment stream
    | [< >] -> [< >]
-
 
 (*==========================================================================*)
 (*================================TEST======================================*)
 (*==========================================================================*)
 
 let rec print_token_stream = parser
-  | [< 'Token.Def; stream >] ->
-      print_string "def ";
-      print_token_stream stream
-
-  | [< 'Token.Extern; stream >] ->
-      print_string "extern ";
-      print_token_stream stream
-
-  | [< 'Token.Ident id; stream >] ->
-      print_string id;
+  | [< 'token; stream >] ->
+      print_string (Token.string_of_token token);
       print_char ' ';
-      print_token_stream stream
-
-  | [< 'Token.Number n; stream >] ->
-      print_int n;
-      print_char ' ';
-      print_token_stream stream
-
-  | [< 'Token.Kwd c; stream >] ->
-      print_char c;
-      print_char ' ';
-      if c = ';' then
-        print_endline "";
       print_token_stream stream
 
   | [< >] -> print_endline ""

@@ -1,9 +1,9 @@
 (* binop_precedence - This holds the precedence for each binary operator that
  * is defined *)
-let binop_precedence: (char, int) Hashtbl.t = Hashtbl.create 10
+let binop_precedence: (Token.operator, int) Hashtbl.t = Hashtbl.create 10
 
 (* by default, associativity is left *)
-let right_associative: (char, bool) Hashtbl.t = Hashtbl.create 10
+let right_associative: (Token.operator, bool) Hashtbl.t = Hashtbl.create 10
 
 
 (* precedence - Get the precedence of the pending binary operator token.
@@ -32,14 +32,14 @@ and parse_primary = parser
   | [< 'Token.Number n >] -> Ast.Number n
 
   (* parenexpr *)
-  | [< 'Token.Kwd '('; e=parse_expr; 'Token.Kwd ')' ?? "expected ')'" >] -> e
+  | [< 'Token.Unknown '('; e=parse_expr; 'Token.Unknown ')' ?? "expected ')'" >] -> e
 
   (* expecting a primary expression *)
   | [< >] -> raise Stream.Failure
 
 and parse_bin_rhs prec lhs stream =
   match Stream.peek stream with
-  | Some (Token.Kwd op) when is_known op ->
+  | Some (Token.Operator op) when is_known op ->
       let op_prec = precedence op in
 
       if op_prec < prec || (op_prec = prec && is_left_associative op)
@@ -54,7 +54,7 @@ and parse_bin_rhs prec lhs stream =
         let rhs =
           (* lookahead for the next operator and its precedence *)
           match Stream.peek stream with
-          | Some (Token.Kwd op2) when is_known op2 ->
+          | Some (Token.Operator op2) when is_known op2 ->
               let op2_prec = precedence op2 in
               (* if the precedence of this operator is less than the previous,
                * the rhs is just the primary expression, else we recurse to
@@ -89,7 +89,7 @@ let rec print_ast = parser
             print_char '(';
             aux lhs;
             print_char ' ';
-            print_char op;
+            print_string (Token.string_of_operator op);
             print_char ' ';
             aux rhs;
             print_char ')'
@@ -100,7 +100,7 @@ let rec print_ast = parser
       print_endline "";
       print_ast stream
 
-  | [< 'Token.Kwd ';'; stream >] ->
+  | [< 'Token.Unknown ';'; stream >] ->
       print_ast stream
 
   | [< >] -> print_endline ""
@@ -112,10 +112,10 @@ let rec print_ast = parser
   | Call of string * expr list*)
 
 let main () =
-  Hashtbl.add binop_precedence '<' 10;
-  Hashtbl.add binop_precedence '+' 20;
-  Hashtbl.add binop_precedence '-' 20;
-  Hashtbl.add binop_precedence '*' 40;
+  Hashtbl.add binop_precedence Token.Lt 10;
+  Hashtbl.add binop_precedence Token.Add 20;
+  Hashtbl.add binop_precedence Token.Minus 20;
+  Hashtbl.add binop_precedence Token.Mult 40;
 
   let stream = Lexer.lex (Stream.of_channel stdin) in
   print_ast stream;
